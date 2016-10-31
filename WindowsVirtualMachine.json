@@ -212,7 +212,7 @@
             "displayName": "AzureDiagnostics"
           },
           "dependsOn": [
-            "[concat('Microsoft.Compute/virtualMachines/', variables('vmName'))]"
+            "[concat('Microsoft.Compute/virtualMachines/', parameters('vmName'))]"
           ],
           "properties": {
             "publisher": "Microsoft.Azure.Diagnostics",
