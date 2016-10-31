@@ -1,0 +1,117 @@
+﻿{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "myvmdinorName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "myvmdinorAdminUserName": {
+            "type": "string",
+            "minLength": 1
+        },
+        "myvmdinorAdminPassword": {
+            "type": "securestring"
+        },
+        "myvmdinorWindowsOSVersion": {
+            "type": "string",
+            "defaultValue": "2012-R2-Datacenter",
+            "allowedValues": [
+                "2008-R2-SP1",
+                "2012-Datacenter",
+                "2012-R2-Datacenter",
+                "Windows-Server-Technical-Preview"
+            ]
+        }
+    },
+  "variables": {
+    "sampledinstorageName": "dintest",
+    "ddddPrefix": "10.0.0.0/16",
+
+    "ddddSubnet2Name": "ADStaticSubnet",
+
+    "myvmdinorImagePublisher": "MicrosoftWindowsServer",
+    "myvmdinorImageOffer": "WindowsServer",
+    "myvmdinorOSDiskName": "myvmdinorOSDisk",
+    "myvmdinorVmSize": "Standard_D2_v2",
+    "myvmdinorVnetID": "/subscriptions/928f4e7e-2c28-4063-a56e-6f1e6f2bb73c/resourceGroups/sql1/providers/Microsoft.Network/virtualNetworks/WorkloadVNET",
+    "myvmdinorSubnetRef": "[concat(variables('myvmdinorVnetID'), '/subnets/', variables('ddddSubnet2Name'))]",
+    "myvmdinorStorageAccountContainerName": "vhds",
+    "myvmdinorNicName": "[concat(parameters('myvmdinorName'), 'NetworkInterface')]"
+  },
+    "resources": [
+        {
+            "name": "[variables('myvmdinorNicName')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [
+               
+            ],
+            "tags": {
+                "displayName": "myvmdinorNic"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[variables('myvmdinorSubnetRef')]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "name": "[parameters('myvmdinorName')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2015-06-15",
+            "dependsOn": [
+               
+                "[concat('Microsoft.Network/networkInterfaces/', variables('myvmdinorNicName'))]"
+            ],
+            "tags": {
+                "displayName": "myvmdinor"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "[variables('myvmdinorVmSize')]"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('myvmdinorName')]",
+                    "adminUsername": "[parameters('myvmdinorAdminUsername')]",
+                    "adminPassword": "[parameters('myvmdinorAdminPassword')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "[variables('myvmdinorImagePublisher')]",
+                        "offer": "[variables('myvmdinorImageOffer')]",
+                        "sku": "[parameters('myvmdinorWindowsOSVersion')]",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "myvmdinorOSDisk",
+                        "vhd": {
+                            "uri": "[concat('https://', variables('sampledinstorageName'), '.blob.core.windows.net/', variables('myvmdinorStorageAccountContainerName'), '/', variables('myvmdinorOSDiskName'), '.vhd')]"
+                        },
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('myvmdinorNicName'))]"
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "outputs": {
+    }
+}
